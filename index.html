@@ -19,28 +19,21 @@
   .field input:focus,.field select:focus{outline:none;border-color:#00B2A9;box-shadow:0 0 0 3px rgba(0,178,169,0.15)}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .divider{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.07em;margin:24px 0 14px;padding-bottom:8px;border-bottom:1.5px solid #f0f0f0}
-  .btn{width:100%;padding:15px;border-radius:10px;border:none;font-size:17px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s,transform 0.1s;margin-top:8px}
-  .btn:active{transform:scale(0.98)}
-  .btn-submit{background:#006D6B;color:#fff}
-  .btn-submit:disabled{background:#aaa;cursor:not-allowed;transform:none}
-  .status{margin-top:14px;padding:14px;border-radius:10px;font-size:14px;line-height:1.6;display:none;text-align:center}
-  .status.sending{display:block;background:#f0faf8;color:#0F6E56;border:1.5px solid #9FE1CB}
-  .status.ok{display:block;background:#E1F5EE;color:#085041;border:1.5px solid #0F6E56}
-  .status.err{display:block;background:#FDEEEA;color:#712B13;border:1.5px solid #993C1D}
-  .status .ref{font-size:12px;margin-top:6px;opacity:0.75}
+  .btn{width:100%;padding:15px;border-radius:10px;border:none;font-size:17px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;background:#006D6B;color:#fff}
+  .btn:disabled{background:#aaa;cursor:not-allowed}
 </style>
 </head>
 <body>
 <div class="card">
   <div class="header">
     <h1>Journey Management Plan</h1>
-    <p>Millmerran Outages - Energy &nbsp;|&nbsp; Service Stream</p>
+    <p>Millmerran Outages - Energy | Service Stream</p>
   </div>
   <div class="body">
     <p class="divider">Driver</p>
-    <div class="field"><label>Full name <span class="req">*</span></label><input type="text" id="f_name" placeholder="Your full name" autocomplete="name"></div>
-    <div class="field"><label>Mobile number <span class="req">*</span></label><input type="tel" id="f_mobile" placeholder="04XX XXX XXX" autocomplete="tel"></div>
-    <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="f_email" placeholder="your@email.com" autocomplete="email"></div>
+    <div class="field"><label>Full name <span class="req">*</span></label><input type="text" id="f_name" placeholder="Your full name"></div>
+    <div class="field"><label>Mobile number <span class="req">*</span></label><input type="tel" id="f_mobile" placeholder="04XX XXX XXX"></div>
+    <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="f_email" placeholder="your@email.com"></div>
     <p class="divider">Journey</p>
     <div class="row2">
       <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="f_date"></div>
@@ -60,55 +53,80 @@
         <option value="6">6+</option>
       </select>
     </div>
-    <div class="field"><label>Vehicle registration <span class="req">*</span></label><input type="text" id="f_rego" placeholder="e.g. 123ABC" autocomplete="off"></div>
+    <div class="field"><label>Vehicle registration <span class="req">*</span></label><input type="text" id="f_rego" placeholder="e.g. 123ABC"></div>
     <p class="divider">JMP Buddy</p>
     <div class="field"><label>Buddy name <span class="req">*</span></label><input type="text" id="f_buddy_name" placeholder="Full name"></div>
     <div class="field"><label>Buddy mobile <span class="req">*</span></label><input type="tel" id="f_buddy_mobile" placeholder="04XX XXX XXX"></div>
-    <div class="field"><label>Buddy email <span class="req">*</span></label><input type="email" id="f_buddy_email" placeholder="name@servicestream.com.au" autocomplete="off"></div>
-    <button class="btn btn-submit" id="btnSubmit" onclick="submitForm()">Submit JMP</button>
-    <div class="status" id="status"></div>
+    <div class="field"><label>Buddy email <span class="req">*</span></label><input type="email" id="f_buddy_email" placeholder="name@servicestream.com.au"></div>
+    <button class="btn" id="btnSubmit" onclick="submitForm()">Submit JMP</button>
+    <div id="status" style="display:none;margin-top:14px;padding:14px;border-radius:10px;font-size:14px;line-height:1.6;text-align:center"></div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 emailjs.init({ publicKey: 'AtxEssMrYIh72-oEN' });
-function val(id){ return document.getElementById(id).value.trim(); }
-function submitForm() {
-  var name=val('f_name'),mobile=val('f_mobile'),email=val('f_email'),date=val('f_date'),time=val('f_time'),from=val('f_from'),to=val('f_to'),pax=val('f_pax'),rego=val('f_rego'),buddyName=val('f_buddy_name'),buddyMobile=val('f_buddy_mobile'),buddyEmail=val('f_buddy_email');
-  var missing=[];
-  if(!name) missing.push('Driver name');
-  if(!mobile) missing.push('Driver mobile');
-  if(!email) missing.push('Driver email');
-  if(!date) missing.push('Date');
-  if(!time) missing.push('Time departed');
-  if(!from) missing.push('Travelling from');
-  if(!to) missing.push('Travelling to');
-  if(!rego) missing.push('Vehicle registration');
-  if(!buddyName) missing.push('Buddy name');
-  if(!buddyMobile) missing.push('Buddy mobile');
-  if(!buddyEmail) missing.push('Buddy email');
-  if(missing.length){ showStatus('err','Please complete: '+missing.join(', )+'.'); return; }
-  var ref='JMP-'+date.replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
-  var d=new Date(date+'T'+time);
-  var dateStr=d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  var timeStr=d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
-  var paxLabel=pax==='0'?'Travelling alone':pax+(pax==='6'?'+':'')+' passenger'+(pax==='1'?'':'s');
-  var params={ref:ref,driver_name:name,driver_mobile:mobile,driver_email:email,date:dateStr,time_departed:timeStr,from:from,to:to,passengers:paxLabel,rego:rego.toUpperCase(),buddy_name:buddyName,buddy_mobile:buddyMobile,buddy_email:buddyEmail};
-  var btn=document.getElementById('btnSubmit');
-  btn.disabled=true;
-  showStatus('sending','Submitting your JMP...');
-  var send1=emailjs.send('service_4pj25mf','template_4gzriuk',Object.assign({},params,{to_email:buddyEmail,to_name:buddyName}));
-  var send2=emailjs.send('service_4pj25mf','template_4gzriuk',Object.assign({},params,{to_email:'MillmerranOutageTeam@servicestream.com.au',to_name:'Millmerran Outage Team'}));
-  Promise.all([send1,send2]).then(function(){
-    showStatus('ok','<strong>JMP submitted.</strong><br>Confirmation sent to '+buddyName+' and the Millmerran Outage Team.<div class="ref">Ref: '+ref+'</div>');
-    btn.textContent='Submitted';
-  }).catch(function(err){
-    btn.disabled=false;
-    showStatus('err','Send failed - '+(err.text||JSON.stringify(err))+'<br>Try again or contact the Outage Team directly.');
-  });
+function v(id) { return document.getElementById(id).value.trim(); }
+function showStatus(type, msg) {
+  var el = document.getElementById('status');
+  el.style.display = 'block';
+  el.style.background = type === 'ok' ? '#E1F5EE' : type === 'err' ? '#FDEEEA' : '#f0faf8';
+  el.style.color = type === 'ok' ? '#085041' : type === 'err' ? '#712B13' : '#0F6E56';
+  el.style.border = type === 'ok' ? '1.5px solid #0F6E56' : type === 'err' ? '1.5px solid #993C1D' : '1.5px solid #9FE1CB';
+  el.innerHTML = msg;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-function showStatus(type,msg){var el=document.getElementById('status');el.className='status '+type;el.innerHTML=msg;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
-document.getElementById('f_date').valueAsDate=new Date();
+function submitForm() {
+  var name = v('f_name'), mobile = v('f_mobile'), email = v('f_email');
+  var date = v('f_date'), time = v('f_time');
+  var from = v('f_from'), to = v('f_to'), pax = v('f_pax'), rego = v('f_rego');
+  var buddyName = v('f_buddy_name'), buddyMobile = v('f_buddy_mobile'), buddyEmail = v('f_buddy_email');
+  var missing = [];
+  if (!name) missing.push('Driver name');
+  if (!mobile) missing.push('Mobile');
+  if (!email) missing.push('Email');
+  if (!date) missing.push('Date');
+  if (!time) missing.push('Time');
+  if (!from) missing.push('From');
+  if (!to) missing.push('To');
+  if (!rego) missing.push('Rego');
+  if (!buddyName) missing.push('Buddy name');
+  if (!buddyMobile) missing.push('Buddy mobile');
+  if (!buddyEmail) missing.push('Buddy email');
+  if (missing.length) { showStatus('err', 'Please complete: ' + missing.join(', ')); return; }
+  var btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  showStatus('info', 'Submitting...');
+  var ref = 'JMP-' + date.replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  var paxLabel = pax === '0' ? 'Travelling alone' : pax + (pax === '6' ? '+' : '') + ' passenger' + (pax === '1' ? '' : 's');
+  var params = {
+    ref: ref, driver_name: name, driver_mobile: mobile, driver_email: email,
+    date: date, time_departed: time, from: from, to: to,
+    passengers: paxLabel, rego: rego.toUpperCase(),
+    buddy_name: buddyName, buddy_mobile: buddyMobile, buddy_email: buddyEmail,
+    to_name: buddyName, to_email: buddyEmail
+  };
+  emailjs.send('service_4pj25mf', 'template_4gzriuk', params)
+    .then(function() {
+      var p2 = {};
+      for (var k in params) p2[k] = params[k];
+      p2.to_email = 'MillmerranOutageTeam@servicestream.com.au';
+      p2.to_name = 'Millmerran Outage Team';
+      return emailjs.send('service_4pj25mf', 'template_4gzriuk', p2);
+    })
+    .then(function() {
+      showStatus('ok', '<strong>JMP submitted.</strong><br>Sent to ' + buddyName + ' and the Millmerran Outage Team.<br><span style="font-size:12px;opacity:0.75">Ref: ' + ref + '</span>');
+      btn.textContent = 'Submitted';
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      var msg = 'Unknown error';
+      if (err && err.text) msg = err.text;
+      else if (err && err.message) msg = err.message;
+      else try { msg = JSON.stringify(err); } catch(e) {}
+      showStatus('err', 'Failed: ' + msg + '<br>Please try again.');
+    });
+}
+document.getElementById('f_date').valueAsDate = new Date();
 </script>
 </body>
 </html>
