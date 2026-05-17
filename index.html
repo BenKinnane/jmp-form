@@ -15,12 +15,12 @@
   .field{margin-bottom:16px}
   .field label{display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:6px}
   .field label .req{color:#D85A30}
-  .field input,.field select{width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;background:#fff;color:#111;-webkit-appearance:none;appearance:none;transition:border-color 0.15s,box-shadow 0.15s}
-  .field input:focus,.field select:focus{outline:none;border-color:#00B2A9;box-shadow:0 0 0 3px rgba(0,178,169,0.15)}
+  .field input,.field select{width:100%;font-size:16px;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;background:#fff;color:#111;-webkit-appearance:none;appearance:none}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .divider{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.07em;margin:24px 0 14px;padding-bottom:8px;border-bottom:1.5px solid #f0f0f0}
   .btn{width:100%;padding:15px;border-radius:10px;border:none;font-size:17px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;background:#006D6B;color:#fff}
-  .btn:disabled{background:#aaa;cursor:not-allowed}
+  .btn:disabled{background:#aaa}
+  #status{display:none;margin-top:14px;padding:14px;border-radius:10px;font-size:14px;line-height:1.6;text-align:center}
 </style>
 </head>
 <body>
@@ -59,27 +59,61 @@
     <div class="field"><label>Buddy mobile <span class="req">*</span></label><input type="tel" id="f_buddy_mobile" placeholder="04XX XXX XXX"></div>
     <div class="field"><label>Buddy email <span class="req">*</span></label><input type="email" id="f_buddy_email" placeholder="name@servicestream.com.au"></div>
     <button class="btn" id="btnSubmit" onclick="submitForm()">Submit JMP</button>
-    <div id="status" style="display:none;margin-top:14px;padding:14px;border-radius:10px;font-size:14px;line-height:1.6;text-align:center"></div>
+    <div id="status"></div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-emailjs.init({ publicKey: 'AtxEssMrYIh72-oEN' });
-function v(id) { return document.getElementById(id).value.trim(); }
 function showStatus(type, msg) {
   var el = document.getElementById('status');
   el.style.display = 'block';
   el.style.background = type === 'ok' ? '#E1F5EE' : type === 'err' ? '#FDEEEA' : '#f0faf8';
   el.style.color = type === 'ok' ? '#085041' : type === 'err' ? '#712B13' : '#0F6E56';
-  el.style.border = type === 'ok' ? '1.5px solid #0F6E56' : type === 'err' ? '1.5px solid #993C1D' : '1.5px solid #9FE1CB';
+  el.style.border = '1.5px solid ' + (type === 'ok' ? '#0F6E56' : type === 'err' ? '#993C1D' : '#9FE1CB');
   el.innerHTML = msg;
-  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+function v(id) { return document.getElementById(id).value.trim(); }
+
+function doSend(params, buddyName, ref) {
+  showStatus('info', 'Submitting...');
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', 'https://api.emailjs.com/api/v1.0/email/send', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      var p2 = JSON.parse(JSON.stringify(params));
+      p2.template_params.to_email = 'MillmerranOutageTeam@servicestream.com.au';
+      p2.template_params.to_name = 'Millmerran Outage Team';
+      var xhr2 = new XMLHttpRequest();
+      xhr2.open('POST', 'https://api.emailjs.com/api/v1.0/email/send', true);
+      xhr2.setRequestHeader('Content-Type', 'application/json');
+      xhr2.onload = function() {
+        var btn = document.getElementById('btnSubmit');
+        if (xhr2.status === 200) {
+          showStatus('ok', '<strong>JMP submitted.</strong><br>Sent to ' + buddyName + ' and the Millmerran Outage Team.<br><small>Ref: ' + ref + '</small>');
+          btn.textContent = 'Submitted';
+        } else {
+          btn.disabled = false;
+          showStatus('err', 'Second send failed: ' + xhr2.responseText);
+        }
+      };
+      xhr2.onerror = function() { document.getElementById('btnSubmit').disabled = false; showStatus('err', 'Network error on second send.'); };
+      xhr2.send(JSON.stringify(p2));
+    } else {
+      document.getElementById('btnSubmit').disabled = false;
+      showStatus('err', 'Send failed: ' + xhr.responseText);
+    }
+  };
+  xhr.onerror = function() { document.getElementById('btnSubmit').disabled = false; showStatus('err', 'Network error. Check your connection and try again.'); };
+  xhr.send(JSON.stringify(params));
+}
+
 function submitForm() {
   var name = v('f_name'), mobile = v('f_mobile'), email = v('f_email');
   var date = v('f_date'), time = v('f_time');
   var from = v('f_from'), to = v('f_to'), pax = v('f_pax'), rego = v('f_rego');
   var buddyName = v('f_buddy_name'), buddyMobile = v('f_buddy_mobile'), buddyEmail = v('f_buddy_email');
+
   var missing = [];
   if (!name) missing.push('Driver name');
   if (!mobile) missing.push('Mobile');
@@ -93,39 +127,39 @@ function submitForm() {
   if (!buddyMobile) missing.push('Buddy mobile');
   if (!buddyEmail) missing.push('Buddy email');
   if (missing.length) { showStatus('err', 'Please complete: ' + missing.join(', ')); return; }
+
   var btn = document.getElementById('btnSubmit');
   btn.disabled = true;
-  showStatus('info', 'Submitting...');
+
   var ref = 'JMP-' + date.replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
   var paxLabel = pax === '0' ? 'Travelling alone' : pax + (pax === '6' ? '+' : '') + ' passenger' + (pax === '1' ? '' : 's');
+
   var params = {
-    ref: ref, driver_name: name, driver_mobile: mobile, driver_email: email,
-    date: date, time_departed: time, from: from, to: to,
-    passengers: paxLabel, rego: rego.toUpperCase(),
-    buddy_name: buddyName, buddy_mobile: buddyMobile, buddy_email: buddyEmail,
-    to_name: buddyName, to_email: buddyEmail
+    service_id: 'service_4pj25mf',
+    template_id: 'template_4gzriuk',
+    user_id: 'AtxEssMrYIh72-oEN',
+    template_params: {
+      ref: ref,
+      driver_name: name,
+      driver_mobile: mobile,
+      driver_email: email,
+      date: date,
+      time_departed: time,
+      from: from,
+      to: to,
+      passengers: paxLabel,
+      rego: rego.toUpperCase(),
+      buddy_name: buddyName,
+      buddy_mobile: buddyMobile,
+      buddy_email: buddyEmail,
+      to_name: buddyName,
+      to_email: buddyEmail
+    }
   };
-  emailjs.send('service_4pj25mf', 'template_4gzriuk', params)
-    .then(function() {
-      var p2 = {};
-      for (var k in params) p2[k] = params[k];
-      p2.to_email = 'MillmerranOutageTeam@servicestream.com.au';
-      p2.to_name = 'Millmerran Outage Team';
-      return emailjs.send('service_4pj25mf', 'template_4gzriuk', p2);
-    })
-    .then(function() {
-      showStatus('ok', '<strong>JMP submitted.</strong><br>Sent to ' + buddyName + ' and the Millmerran Outage Team.<br><span style="font-size:12px;opacity:0.75">Ref: ' + ref + '</span>');
-      btn.textContent = 'Submitted';
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      var msg = 'Unknown error';
-      if (err && err.text) msg = err.text;
-      else if (err && err.message) msg = err.message;
-      else try { msg = JSON.stringify(err); } catch(e) {}
-      showStatus('err', 'Failed: ' + msg + '<br>Please try again.');
-    });
+
+  doSend(params, buddyName, ref);
 }
+
 document.getElementById('f_date').valueAsDate = new Date();
 </script>
 </body>
