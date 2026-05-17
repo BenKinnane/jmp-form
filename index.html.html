@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!-- saved from url=(0069)file:///C:/Users/Ben.Kinnane/Downloads/journey_management_plan_4.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Journey Management Plan</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+  .card{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;display:flex;flex-direction:column}
+  .header{background:linear-gradient(135deg,#006D6B,#00B2A9);color:#fff;padding:1.25rem 1.25rem 1.5rem}
+  .header h1{font-size:19px;font-weight:600;margin-bottom:3px}
+  .header p{font-size:12px;opacity:0.85}
+  .body{flex:1;padding:1.25rem}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:6px}
+  .field label .req{color:#D85A30}
+  .field input,.field select{
+    width:100%;font-size:16px;padding:12px 14px;
+    border:1.5px solid #ddd;border-radius:10px;
+    background:#fff;color:#111;
+    -webkit-appearance:none;appearance:none;
+    transition:border-color 0.15s,box-shadow 0.15s
+  }
+  .field input:focus,.field select:focus{
+    outline:none;border-color:#00B2A9;
+    box-shadow:0 0 0 3px rgba(0,178,169,0.15)
+  }
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .divider{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.07em;margin:24px 0 14px;padding-bottom:8px;border-bottom:1.5px solid #f0f0f0}
+  .btn{
+    width:100%;padding:15px;border-radius:10px;border:none;
+    font-size:17px;font-weight:600;cursor:pointer;
+    font-family:inherit;transition:background 0.15s,transform 0.1s;
+    margin-top:8px
+  }
+  .btn:active{transform:scale(0.98)}
+  .btn-submit{background:#006D6B;color:#fff}
+  .btn-submit:disabled{background:#aaa;cursor:not-allowed;transform:none}
+  .status{margin-top:14px;padding:14px;border-radius:10px;font-size:14px;line-height:1.6;display:none;text-align:center}
+  .status.sending{display:block;background:#f0faf8;color:#0F6E56;border:1.5px solid #9FE1CB}
+  .status.ok{display:block;background:#E1F5EE;color:#085041;border:1.5px solid #0F6E56}
+  .status.err{display:block;background:#FDEEEA;color:#712B13;border:1.5px solid #993C1D}
+  .status .ref{font-size:12px;margin-top:6px;opacity:0.75}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>Journey Management Plan</h1>
+    <p>Millmerran Outages – Energy &nbsp;|&nbsp; Service Stream</p>
+  </div>
+  <div class="body">
+
+    <p class="divider">Driver</p>
+    <div class="field"><label>Full name <span class="req">*</span></label><input type="text" id="f_name" placeholder="Your full name" autocomplete="name"></div>
+    <div class="field"><label>Mobile number <span class="req">*</span></label><input type="tel" id="f_mobile" placeholder="04XX XXX XXX" autocomplete="tel"></div>
+    <div class="field"><label>Email address <span class="req">*</span></label><input type="email" id="f_email" placeholder="your@email.com" autocomplete="email"></div>
+
+    <p class="divider">Journey</p>
+    <div class="row2">
+      <div class="field"><label>Date <span class="req">*</span></label><input type="date" id="f_date"></div>
+      <div class="field"><label>Time departed <span class="req">*</span></label><input type="time" id="f_time"></div>
+    </div>
+    <div class="field"><label>Travelling from <span class="req">*</span></label><input type="text" id="f_from" placeholder="Origin"></div>
+    <div class="field"><label>Travelling to <span class="req">*</span></label><input type="text" id="f_to" placeholder="Destination"></div>
+    <div class="field">
+      <label>Number of passengers</label>
+      <select id="f_pax">
+        <option value="0">0 – travelling alone</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6+</option>
+      </select>
+    </div>
+    <div class="field"><label>Vehicle registration <span class="req">*</span></label><input type="text" id="f_rego" placeholder="e.g. 123ABC" autocomplete="off"></div>
+
+    <p class="divider">JMP Buddy</p>
+    <div class="field"><label>Buddy name <span class="req">*</span></label><input type="text" id="f_buddy_name" placeholder="Full name"></div>
+    <div class="field"><label>Buddy mobile <span class="req">*</span></label><input type="tel" id="f_buddy_mobile" placeholder="04XX XXX XXX"></div>
+    <div class="field"><label>Buddy email <span class="req">*</span></label><input type="email" id="f_buddy_email" placeholder="name@servicestream.com.au" autocomplete="off"></div>
+
+    <button class="btn btn-submit" id="btnSubmit" onclick="submitForm()">Submit JMP</button>
+    <div class="status" id="status"></div>
+
+  </div>
+</div>
+
+<script src="./Journey Management Plan_files/email.min.js.download"></script>
+<script>
+emailjs.init({ publicKey: 'AtxEssMrYIh72-oEN' });
+
+function val(id){ return document.getElementById(id).value.trim(); }
+
+function submitForm() {
+  var name        = val('f_name');
+  var mobile      = val('f_mobile');
+  var email       = val('f_email');
+  var date        = val('f_date');
+  var time        = val('f_time');
+  var from        = val('f_from');
+  var to          = val('f_to');
+  var pax         = val('f_pax');
+  var rego        = val('f_rego');
+  var buddyName   = val('f_buddy_name');
+  var buddyMobile = val('f_buddy_mobile');
+  var buddyEmail  = val('f_buddy_email');
+
+  var missing = [];
+  if (!name)        missing.push('Driver name');
+  if (!mobile)      missing.push('Driver mobile');
+  if (!email)       missing.push('Driver email');
+  if (!date)        missing.push('Date');
+  if (!time)        missing.push('Time departed');
+  if (!from)        missing.push('Travelling from');
+  if (!to)          missing.push('Travelling to');
+  if (!rego)        missing.push('Vehicle registration');
+  if (!buddyName)   missing.push('Buddy name');
+  if (!buddyMobile) missing.push('Buddy mobile');
+  if (!buddyEmail)  missing.push('Buddy email');
+
+  if (missing.length) {
+    showStatus('err', 'Please complete: ' + missing.join(', ') + '.');
+    return;
+  }
+
+  var ref = 'JMP-' + date.replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+
+  var d = new Date(date + 'T' + time);
+  var dateStr = d.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  var timeStr = d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+  var paxLabel = pax === '0' ? 'Travelling alone' : pax + (pax === '6' ? '+' : '') + ' passenger' + (pax === '1' ? '' : 's');
+
+  var params = {
+    ref:           ref,
+    driver_name:   name,
+    driver_mobile: mobile,
+    driver_email:  email,
+    date:          dateStr,
+    time_departed: timeStr,
+    from:          from,
+    to:            to,
+    passengers:    paxLabel,
+    rego:          rego.toUpperCase(),
+    buddy_name:    buddyName,
+    buddy_mobile:  buddyMobile,
+    buddy_email:   buddyEmail
+  };
+
+  var btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  showStatus('sending', 'Submitting your JMP&hellip;');
+
+  // Send to buddy
+  var send1 = emailjs.send('service_4pj25mf', 'template_4gzriuk', Object.assign({}, params, {
+    to_email: buddyEmail,
+    to_name:  buddyName
+  }));
+
+  // Send to Millmerran Outage Team
+  var send2 = emailjs.send('service_4pj25mf', 'template_4gzriuk', Object.assign({}, params, {
+    to_email: 'MillmerranOutageTeam@servicestream.com.au',
+    to_name:  'Millmerran Outage Team'
+  }));
+
+  Promise.all([send1, send2])
+    .then(function() {
+      showStatus('ok',
+        '<strong>JMP submitted.</strong><br>' +
+        'Confirmation sent to ' + buddyName + ' and the Millmerran Outage Team.' +
+        '<div class="ref">Ref: ' + ref + '</div>'
+      );
+      btn.textContent = 'Submitted';
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      showStatus('err',
+        'Send failed — ' + (err.text || JSON.stringify(err)) +
+        '<br>Try again or contact the Outage Team directly.'
+      );
+    });
+}
+
+function showStatus(type, msg) {
+  var el = document.getElementById('status');
+  el.className = 'status ' + type;
+  el.innerHTML = msg;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.getElementById('f_date').valueAsDate = new Date();
+</script>
+
+
+</body></html>
